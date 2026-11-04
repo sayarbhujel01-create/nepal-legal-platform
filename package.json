@@ -1,0 +1,20 @@
+{
+  "name": "nepal-legal-platform",
+  "version": "1.0.0",
+  "description": "Citizens' Rights & Legal Awareness Platform - Nepal Legal Knowledge Hub",
+  "type": "module",
+  "scripts": {
+    "start": "agy-node server.js",
+    "seed": "agy-node db/seed.js"
+  },
+  "keywords": [
+    "legal-awareness",
+    "citizens-rights",
+    "nepal-law",
+    "constitution-nepal",
+    "labour-rights",
+    "property-rights"
+  ],
+  "author": "Legal Awareness Platform Initiative",
+  "license": "MIT"
+}
