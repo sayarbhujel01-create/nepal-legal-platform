@@ -61,9 +61,14 @@ function getAdminUser(req) {
   return activeSessions.get(token) || null;
 }
 
-const server = http.createServer(async (req, res) => {
+export async function handleRequest(req, res) {
   try {
-    const urlObj = new URL(req.url, `http://${req.headers.host}`);
+    let rawUrl = req.url || '/';
+    if ((rawUrl === '/api/index.js' || rawUrl === '/api' || rawUrl.startsWith('/api/index.js?') || rawUrl.startsWith('/api?')) && req.headers['x-forwarded-uri']) {
+      rawUrl = req.headers['x-forwarded-uri'];
+    }
+    const host = req.headers.host || 'localhost';
+    const urlObj = new URL(rawUrl, `http://${host}`);
     const pathname = urlObj.pathname;
     const lang = getLang(req, urlObj);
 
@@ -632,13 +637,24 @@ const server = http.createServer(async (req, res) => {
     res.writeHead(500, { 'Content-Type': 'text/html; charset=utf-8' });
     res.end(`<h1>500 Internal Server Error</h1><p>${err.message}</p>`);
   }
-});
+}
 
-server.listen(PORT, '0.0.0.0', () => {
-  console.log(`================================================================`);
-  console.log(`  Citizens' Rights & Legal Awareness Platform (Nepal)`);
-  console.log(`  Running at: http://localhost:${PORT}`);
-  console.log(`  Admin CMS:  http://localhost:${PORT}/admin/`);
-  console.log(`  Language:   Bilingual English & Nepali (नेपाली)`);
-  console.log(`================================================================`);
-});
+export const server = http.createServer(handleRequest);
+
+const isMain = process.argv[1] && (
+  fileURLToPath(import.meta.url) === path.resolve(process.argv[1]) ||
+  process.argv[1].endsWith('server.js')
+);
+
+if (isMain) {
+  server.listen(PORT, '0.0.0.0', () => {
+    console.log(`================================================================`);
+    console.log(`  Citizens' Rights & Legal Awareness Platform (Nepal)`);
+    console.log(`  Running at: http://localhost:${PORT}`);
+    console.log(`  Admin CMS:  http://localhost:${PORT}/admin/`);
+    console.log(`  Language:   Bilingual English & Nepali (नेपाली)`);
+    console.log(`================================================================`);
+  });
+}
+
+export default handleRequest;

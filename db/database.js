@@ -1,16 +1,68 @@
 import { DatabaseSync } from 'node:sqlite';
+import fs from 'node:fs';
 import path from 'node:path';
+import os from 'node:os';
 import { fileURLToPath } from 'node:url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const dbPath = path.join(__dirname, 'platform.db');
+
+// Candidate locations for source database
+const candidateSourcePaths = [
+  path.join(__dirname, 'platform.db'),
+  path.join(process.cwd(), 'db', 'platform.db'),
+  path.join(process.cwd(), 'platform.db')
+];
+
+let sourceDbPath = candidateSourcePaths.find(p => {
+  try {
+    return fs.existsSync(p) && fs.statSync(p).size > 0;
+  } catch (_) {
+    return false;
+  }
+}) || candidateSourcePaths[0];
+
+// Detect serverless environment (Vercel, AWS Lambda, Netlify, etc.)
+const isServerless = Boolean(
+  process.env.VERCEL || 
+  process.env.AWS_LAMBDA_FUNCTION_NAME || 
+  process.env.LAMBDA_TASK_ROOT ||
+  process.env.VERCEL_ENV
+);
+
+let dbPath = sourceDbPath;
+
+if (isServerless) {
+  try {
+    const tmpDbPath = path.join(os.tmpdir(), 'platform.db');
+    // If the database has not yet been copied to /tmp for this lambda container
+    if (!fs.existsSync(tmpDbPath) || fs.statSync(tmpDbPath).size === 0) {
+      if (fs.existsSync(sourceDbPath)) {
+        fs.copyFileSync(sourceDbPath, tmpDbPath);
+      }
+    }
+    dbPath = tmpDbPath;
+  } catch (copyErr) {
+    console.warn('[db] Note: Serverless /tmp copy skipped, attempting direct access:', copyErr.message);
+  }
+}
 
 export const db = new DatabaseSync(dbPath);
 
-// Enable WAL mode for high performance concurrency
-db.exec('PRAGMA journal_mode = WAL;');
-db.exec('PRAGMA foreign_keys = ON;');
+// Enable journal mode with fallback for read-only or serverless environments
+try {
+  db.exec('PRAGMA journal_mode = WAL;');
+} catch (e) {
+  try {
+    db.exec('PRAGMA journal_mode = MEMORY;');
+  } catch (_) {
+    // Read-only filesystem fallback
+  }
+}
+
+try {
+  db.exec('PRAGMA foreign_keys = ON;');
+} catch (_) {}
 
 export function initSchema() {
   db.exec(`

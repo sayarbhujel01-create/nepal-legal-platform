@@ -10,5 +10,10 @@ start http://localhost:3000
 echo.
 echo Server running on port 3000. Press Ctrl+C to terminate.
 echo.
-agy-node server.js
+where agy-node >nul 2>nul
+if %ERRORLEVEL% EQU 0 (
+    agy-node server.js
+) else (
+    node server.js
+)
 pause

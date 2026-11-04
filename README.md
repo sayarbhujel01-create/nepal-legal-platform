@@ -110,8 +110,23 @@ agy-node db/seed.js
 ### Option D: Run Test Suite
 ```powershell
 agy-node test/test-suite.js
+# Or with standard node:
+npm test
 ```
-All 33 test assertions will execute in-process and report verification status.
+All 36 test assertions will execute in-process and report verification status.
+
+### Option E: Deploy to Vercel (1-Click)
+This project is fully configured for serverless deployment on [Vercel](https://vercel.com):
+- Serverless entry point: `api/index.js`
+- Routing & static asset edge caching: `vercel.json`
+- Database: Self-contained `node:sqlite` with automatic `/tmp` persistence
+
+**Steps to deploy:**
+1. Go to [vercel.com/new](https://vercel.com/new) and sign in with GitHub.
+2. Under "Import Git Repository", select **`nepal-legal-platform`**.
+3. Keep default settings (**Framework Preset: Other**, **Root Directory: `./`**).
+4. Click **Deploy**.
+Your platform will be live globally on a free `*.vercel.app` domain in seconds!
 
 ### Community CMS Access
 - **URL**: `http://localhost:3000/admin/`

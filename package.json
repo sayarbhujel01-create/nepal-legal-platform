@@ -3,9 +3,16 @@
   "version": "1.0.0",
   "description": "Citizens' Rights & Legal Awareness Platform - Nepal Legal Knowledge Hub",
   "type": "module",
+  "main": "api/index.js",
   "scripts": {
-    "start": "agy-node server.js",
-    "seed": "agy-node db/seed.js"
+    "start": "node server.js",
+    "dev": "node server.js",
+    "local": "agy-node server.js",
+    "seed": "node db/seed.js",
+    "test": "node test/test-suite.js"
+  },
+  "engines": {
+    "node": ">=22.x"
   },
   "keywords": [
     "legal-awareness",

@@ -128,6 +128,45 @@ async function runTests() {
   ], 'en');
   assert('JSON-LD FAQPage Schema generated properly', schemaFaq.includes('"@type":"FAQPage"') && schemaFaq.includes('Sample Question?'));
 
+  // 10. Vercel Serverless Function (api/index.js) Verification
+  const vercelHandler = (await import('../api/index.js')).default;
+  class MockReq extends EventEmitter {
+    constructor(url, headers = {}) {
+      super();
+      this.url = url;
+      this.headers = { host: 'localhost:3000', ...headers };
+      this.method = 'GET';
+    }
+  }
+  class MockRes extends EventEmitter {
+    constructor() {
+      super();
+      this.statusCode = 200;
+      this.headers = {};
+      this.body = '';
+    }
+    writeHead(code, headers) {
+      this.statusCode = code;
+      Object.assign(this.headers, headers);
+    }
+    end(chunk) {
+      if (chunk) this.body += chunk;
+      this.emit('finish');
+    }
+  }
+
+  const vRes1 = new MockRes();
+  await vercelHandler(new MockReq('/'), vRes1);
+  assert('Vercel handler renders Root Home Page (HTTP 200)', vRes1.statusCode === 200 && vRes1.body.includes('Citizens\' Rights'));
+
+  const vRes2 = new MockRes();
+  await vercelHandler(new MockReq('/api/index.js', { 'x-forwarded-uri': '/fundamental-rights/?lang=ne' }), vRes2);
+  assert('Vercel handler handles x-forwarded-uri rewrite (Nepali)', vRes2.statusCode === 200 && vRes2.body.includes('मौलिक हक'));
+
+  const vRes3 = new MockRes();
+  await vercelHandler(new MockReq('/api/search?q=rights'), vRes3);
+  assert('Vercel handler renders Search API JSON (HTTP 200)', vRes3.statusCode === 200 && vRes3.headers['Content-Type'].includes('application/json'));
+
   console.log('\n==================================================');
   console.log(`  IN-PROCESS TEST SUITE: ${passed} Passed, ${failed} Failed`);
   console.log('==================================================');
